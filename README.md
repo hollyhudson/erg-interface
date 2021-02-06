@@ -1,6 +1,6 @@
 ![ESP8266 on a breadboard on the water rower](images/breadboard.jpg)
 
-Adds an interface for the [VIRTUFIT WATER RESISTANCE ROW 1000](https://virtufit.nl/product/virtufit-foldable-water-resistance-row-1000-roeitrainer/) rowing machine to provide custom stats.  In extreme early development stage.
+Adds an interface for the [Virtufit water resistance row 1000](https://virtufit.nl/product/virtufit-foldable-water-resistance-row-1000-roeitrainer/) rowing machine to provide custom stats.  
 
 ## Electrical Interface
 
