@@ -21,6 +21,28 @@ a debounce filter on the input.
 
 Serial 115200 baud, prints columns of data.
 
+## Data Schema
+
+A row is recorded at the end of each tick (after a magnet has passed the second sensor).
+
+`workout_time_usec`
+	Time since beginning of workout.
+
+`stroke_time_usec`
+	Time since beginning of current stroke.
+
+`tick_duration_usec`
+	Time it took for the magnet to pass from one sensor to the next (from falling edge on sensor A to falling edge of sensor B of the electrical signal).  Positive values are produced during the drive, and negative during the recovery.
+
+`inst_drag`
+	Instantaneous drag force.  Calculated by the speed of the belt squared, with the speed of the belt being calculated as the inverse of the tick duration.
+
+`stroke_power`
+	Integral of the drag forces for current stroke, calculated here with a running sum for simplicity.  
+
+`inst_spm`
+	Approximation of strokes per minute based on speed of previous stroke.
+
 ## BLE FTMS
 
 TODO.
