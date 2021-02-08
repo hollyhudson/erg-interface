@@ -25,44 +25,50 @@ function make_chart(drives, power_profile) {
 		graph_width = canvas_width - margin.left - margin.right,
 		graph_height = canvas_height - margin.top - margin.bottom;
 
-	const svg = d3.select("#dataviz_area")
+	// scale the ranges (pixels)
+	const x = d3.scaleLinear().range([0,graph_width]);
+	const y = d3.scaleLinear().range([graph_height,0]);
+
+	// scale the domains (data)
+	x.domain([0,power_profile.length]);
+	y.domain(d3.extent(power_profile, function(d) { return d.power; }));
+
+	// define the line
+	let valueline = d3.line()
+			.x(function(d) { return x(d.stroke_num) })
+			.y(function(d) { return y(d.power) });
+
+	// put the chart in the canvas
+	let svg = d3.select("#dataviz_area")
 		.append("svg")
 			.attr("width", canvas_width)
 			.attr("height", canvas_height)
-		.append("g")
-			.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
 
-	// x scale and axis
-	const x = d3.scaleLinear()
-		.domain([0,power_profile.length])
-		.range([0,graph_width]);
+		// transform the origin and draw the line
+		.append("g")
+			.attr("transform",
+					"translate(" + margin.left + "," + margin.top + ")")
+
+	// draw the line
+	svg
+		.append("path")
+			.datum(power_profile)
+			.attr("d", valueline)
+			.attr("class", "line")
+			.attr("fill", "none")
+			.attr("stroke", "steelblue")
+			.attr("stroke-width", 1.5);
+
+	//transform the origin and draw the axes
 	svg
 		.append('g')
 		.attr("transform", "translate(0," + graph_height + ")")
 		.call(d3.axisBottom(x));
-
-	// y scale and axis
-	const y = d3.scaleLinear()
-		.domain([d3.min(power_profile, i => i.power), d3.max(power_profile, i => i.power)]) 
-		.range([graph_height,0]);
 	svg
 		.append('g')
 		.call(d3.axisLeft(y));
 
-	// add the data
-	svg
-		.append("path")
-		.datum(power_profile)
-		.attr("fill", "none")
-		.attr("stroke", "steelblue")
-		.attr("stroke-width", 1.5)
-		.attr("d", d3.line()
-			.x(function(d) { return x(d.stroke_num) })
-			.y(function(d) { return y(d.power) })
-		)
-
-	// add the labels
-	// x axis
+	// label the x axis
 	svg
 		.append("text")
 		.attr("class","x label")
@@ -70,7 +76,8 @@ function make_chart(drives, power_profile) {
 		.attr("x", canvas_width)
 		.attr("y", canvas_height - 8)
 		.text("stroke");
-	// y axis
+
+	// label the y axis
 	svg
 		.append("text")
 		.attr("class","y label")
@@ -83,45 +90,53 @@ function make_chart(drives, power_profile) {
 
 function getData() {
 	let start_time = 0;
-	d3.csv("sample-data/th-10min.2021-02-07.csv", function(d) { 
-		// make workout time an offset from zero (comes in as time since boot)
+	d3.csv("sample-data/th-10min.2021-02-07.csv", function(d) {
+
+		// grab the first workout time stamp to use as a start time offset 
 		if(start_time == 0) {
 			start_time = d.workout_time_usec;
 		}
-		return {
+
+		d = {
 			workout_offset: d.workout_time_usec - start_time,	
 			stroke_time: +d.stroke_time_usec,	
 			tick_duration: +d.tick_duration_usec,	
 			inst_drag: +d.inst_drag,	
 			stroke_power: +d.stroke_power,	
 			inst_spm: +d.inst_spm,	
-		};		
+		}
+
+		// remove recovery rows
+		if (d.tick_duration < 0) {
+			return null;
+		}
+			
+		// now add this row to the array of objects that d3.csv is creating
+		return d;
 	}).then(processData);
 };
 
 function processData(d) {
-	// remove recovery rows
-	let drives = d3.filter(d, i => i.tick_duration > 0);
 
 	// remove first tick because power is usually zero and appears as
 	// an outlier that messes up our graph
-	drives.shift();	
+	d.shift();	
 
 	let stroke_count = 0;
 	let power_profile = [{stroke_num: 1, power: 0}];
 
 	// get stroke count and total power for each stroke
-	drives.forEach(drive => {
-		if (drive.stroke_time == 0) {
+	d.forEach(d => {
+		if (d.stroke_time == 0) {
 			// first row of a new stroke!
 			stroke_count += 1;
 			power_profile[stroke_count] = {
 					stroke_num: stroke_count + 1, 
-					power: drive.stroke_power
+					power: d.stroke_power
 			};
 		} else {
 			// update the power_profile entry for this stroke
-			new_power = drive.stroke_power;
+			new_power = d.stroke_power;
 			if (new_power > power_profile[stroke_count].power) {
 				power_profile[stroke_count].power = new_power;
 			}
@@ -129,5 +144,5 @@ function processData(d) {
 	});
 
 	console.log(stroke_count);
-	make_chart(drives, power_profile);
+	make_chart(d, power_profile);
 }
