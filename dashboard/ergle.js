@@ -14,16 +14,14 @@
  * y = d3.scaleLinear() ..etc 
  */
 
-let canvas_width = 500;
-let canvas_height = 500;
+const canvas_width = 600;
+const canvas_height = 500;
 getData();
-
-//let [drives, power_profile] = processData(data);
 
 function make_chart(drives, power_profile) {
 	// the axes will sit in the margin, so make them big enough
 	console.log(power_profile);
-	const margin = {top: 10, right: 10, bottom: 20, left: 50},
+	const margin = {top: 20, right: 10, bottom: 30, left: 50},
 		graph_width = canvas_width - margin.left - margin.right,
 		graph_height = canvas_height - margin.top - margin.bottom;
 
@@ -62,6 +60,25 @@ function make_chart(drives, power_profile) {
 			.x(function(d) { return x(d.stroke_num) })
 			.y(function(d) { return y(d.power) })
 		)
+
+	// add the labels
+	// x axis
+	svg
+		.append("text")
+		.attr("class","x label")
+		.attr("text-anchor", "end")
+		.attr("x", canvas_width)
+		.attr("y", canvas_height - 8)
+		.text("stroke");
+	// y axis
+	svg
+		.append("text")
+		.attr("class","y label")
+		.attr("text-anchor", "start")
+		.attr("x", 0)
+		.attr("y", 0)
+		//.attr("transform", "rotate(-90)")
+		.text("power");
 }
 
 function getData() {
@@ -85,7 +102,10 @@ function getData() {
 function processData(d) {
 	// remove recovery rows
 	let drives = d3.filter(d, i => i.tick_duration > 0);
-	console.log(drives);
+
+	// remove first tick because power is usually zero and appears as
+	// an outlier that messes up our graph
+	drives.shift();	
 
 	let stroke_count = 0;
 	let power_profile = [{stroke_num: 1, power: 0}];
