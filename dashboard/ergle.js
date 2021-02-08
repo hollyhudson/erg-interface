@@ -38,6 +38,12 @@ function make_chart(drives, power_profile) {
 			.x(function(d) { return x(d.stroke_num) })
 			.y(function(d) { return y(d.power) });
 
+	// reference line for average power
+	let avg_power = d3.mean(power_profile, d => d.power);
+	let avg_power_line = d3.line()
+			.x(function(d) { return x(d.stroke_num) })
+			.y(function(d) { return avg_power });
+
 	// put the chart in the canvas
 	let svg = d3.select("#dataviz_area")
 		.append("svg")
@@ -49,23 +55,35 @@ function make_chart(drives, power_profile) {
 			.attr("transform",
 					"translate(" + margin.left + "," + margin.top + ")")
 
-	// draw the line
+	// draw the power distribution line
 	svg
 		.append("path")
 			.datum(power_profile)
 			.attr("d", valueline)
 			.attr("class", "line")
 			.attr("fill", "none")
-			.attr("stroke", "steelblue")
+			.attr("stroke", "#be606a")
+			.attr("stroke-width", 1.5);
+
+	// draw the average power line
+	svg
+		.append("path")
+			.datum(power_profile)
+			.attr("d", avg_power_line)
+			.attr("class", "line")
+			.attr("fill", "none")
+			.attr("stroke", "#d08770")
 			.attr("stroke-width", 1.5);
 
 	//transform the origin and draw the axes
 	svg
 		.append('g')
+		.attr("class", "axis")
 		.attr("transform", "translate(0," + graph_height + ")")
 		.call(d3.axisBottom(x));
 	svg
 		.append('g')
+		.attr("class", "axis")
 		.call(d3.axisLeft(y));
 
 	// label the x axis
