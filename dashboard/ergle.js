@@ -16,12 +16,15 @@
 
 const canvas_width = 600;
 const canvas_height = 500;
+
+const orange = "#ff9101";
+
 getData();
 
 function make_chart(drives, power_profile) {
 	// the axes will sit in the margin, so make them big enough
 	console.log(power_profile);
-	const margin = {top: 20, right: 10, bottom: 30, left: 50},
+	const margin = {top: 20, right: 10, bottom: 50, left: 50},
 		graph_width = canvas_width - margin.left - margin.right,
 		graph_height = canvas_height - margin.top - margin.bottom;
 
@@ -42,7 +45,7 @@ function make_chart(drives, power_profile) {
 	let avg_power = d3.mean(power_profile, d => d.power);
 	let avg_power_line = d3.line()
 			.x(function(d) { return x(d.stroke_num) })
-			.y(function(d) { return avg_power });
+			.y(function(d) { return y(avg_power) });
 
 	// put the chart in the canvas
 	let svg = d3.select("#dataviz_area")
@@ -62,7 +65,7 @@ function make_chart(drives, power_profile) {
 			.attr("d", valueline)
 			.attr("class", "line")
 			.attr("fill", "none")
-			.attr("stroke", "#be606a")
+			.attr("stroke", orange)
 			.attr("stroke-width", 1.5);
 
 	// draw the average power line
@@ -73,7 +76,7 @@ function make_chart(drives, power_profile) {
 			.attr("class", "line")
 			.attr("fill", "none")
 			.attr("stroke", "#d08770")
-			.attr("stroke-width", 1.5);
+			.attr("stroke-width", 2);
 
 	//transform the origin and draw the axes
 	svg
@@ -84,31 +87,44 @@ function make_chart(drives, power_profile) {
 	svg
 		.append('g')
 		.attr("class", "axis")
-		.call(d3.axisLeft(y));
+		.call(d3.axisLeft(y))
+		.select(".domain").remove();
 
+	// header label
+	svg
+		.append("text")
+		.attr("text-anchor", "center")
+		.attr("x", graph_width/2)
+		.attr("y", margin.top - 20)
+		.attr("fill", "#fff")
+		.attr("font-size", "20px")
+		.text("power distribution");
+	
 	// label the x axis
 	svg
 		.append("text")
-		.attr("class","x label")
+		.attr("class","x_label")
 		.attr("text-anchor", "end")
-		.attr("x", canvas_width)
-		.attr("y", canvas_height - 8)
+		.attr("x", graph_width)
+		.attr("y", graph_height + margin.top + 15)
+		.attr("fill", "#fff")
 		.text("stroke");
 
 	// label the y axis
 	svg
 		.append("text")
-		.attr("class","y label")
+		.attr("class","y_label")
 		.attr("text-anchor", "start")
-		.attr("x", 0)
-		.attr("y", 0)
+		.attr("x", 0 - margin.left)
+		.attr("y", 0 - 8)
+		.attr("fill", orange)
 		//.attr("transform", "rotate(-90)")
 		.text("power");
 }
 
 function getData() {
 	let start_time = 0;
-	d3.csv("sample-data/th-10min.2021-02-07.csv", function(d) {
+	d3.csv("sample-data/hh-20210208.csv", function(d) {
 
 		// grab the first workout time stamp to use as a start time offset 
 		if(start_time == 0) {

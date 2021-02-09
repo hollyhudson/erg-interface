@@ -1,4 +1,4 @@
-time,stroke_usec,tick_usec,force,power,spm
+workout_time_usec,stroke_time_usec,tick_duration_usec,inst_drag,stroke_power,inst_spm
 495867591,0,164800,0.734472,0,0.1
 496583697,716106,70256,4.049858,4.78433,0.1
 496795862,928271,44581,10.062098,14.846428,0.1

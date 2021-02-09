@@ -7,3 +7,7 @@ body {
 .axis {
 	font: 14px; 
 }
+
+.x_label, .y_label {
+	color: white;
+}
