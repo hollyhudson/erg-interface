@@ -24,57 +24,133 @@ const speedometer_height = Math.round(canvas_height * 11 / 15);
 const meter_width = Math.round(canvas_width * 5 / 12);
 const meter_height = Math.round(canvas_height * 4 / 15);
 const power_bar_width = Math.round(canvas_width * 2 /12);
-const p_curve_height = Math.round(canvas_height * 7 / 12);
+const p_curve_height = Math.round(canvas_height * 7 / 15);
 
 let dashboard = d3.select("#dashboard").append("svg")
 	.attr("width", canvas_width)
 	.attr("height", canvas_height)
 	.call(responsive_resize);
 
-let speedometer = dashboard.append("rect")
-	.attr("x", 0)
-	.attr("y", 0)
-	.attr("width", meter_width)
-	.attr("height", speedometer_height)
-	.attr("fill", "cyan");
+let speedometer = dashboard.append("g")
+	.attr("transform", "translate(0, 0)");
 
-let distance_meter = dashboard.append("rect")
-	.attr("x", 0)
-	.attr("y", speedometer_height)
-	.attr("width", meter_width)
-	.attr("height", meter_height)
-	.attr("fill", "blue");
+speedometer
+	.append("rect")
+		.attr("width", meter_width)
+		.attr("height", speedometer_height)
+		.attr("fill", "none")
+		.attr("stroke", "#444");
 
-let power_bar = dashboard.append("rect")
-	.attr("x", meter_width)
-	.attr("y", 0)
-	.attr("width", power_bar_width)
-	.attr("height", canvas_height)
-	.attr("fill", "orange");
+speedometer
+	.append("text")
+		.style("fill", "#0ff")
+		.style("font", "25px monospace")
+		.attr("transform", `translate(${meter_width/2}, ${speedometer_height/2})`)
+		.attr("text-anchor", "middle")
+		.text("speedometer goes here");
 
-let power_curve = dashboard.append("rect")
-	.attr("x", meter_width + power_bar_width)
-	.attr("y", 0)
-	.attr("width", meter_width)
-	.attr("height", p_curve_height)
-	.attr("fill", "pink");
+let distance_meter = dashboard.append("g")
+	.attr("transform", 
+		`translate(0, ${speedometer_height})`);
+
+distance_meter
+	.append("rect")
+		.attr("width", meter_width)
+		.attr("height", meter_height)
+		.attr("fill", "none")
+		.attr("stroke", "#444");
+
+distance_meter
+	.append("text")
+		.style("fill", "#8af")
+		.style("font", "25px monospace")
+		.attr("transform", `translate(${meter_width/2}, ${meter_height/2})`)
+		.attr("text-anchor", "middle")
+		.text("distance goes here");
+
+let power_bar = dashboard.append("g")
+	.attr("transform", 
+		`translate(${meter_width}, 0)`);
+
+power_bar
+	.append("rect")
+		.attr("width", power_bar_width)
+		.attr("height", canvas_height)
+		.attr("fill", "none")
+		.attr("stroke", "#444");
+
+power_bar
+	.append("text")
+		.style("fill", "#fa0")
+		.style("font", "25px monospace")
+		.attr("transform",
+			`translate(${power_bar_width/2},
+				${canvas_height/2})`)
+		.attr("text-anchor", "middle")
+		.text("power bar goes here");
+
+let power_curve = dashboard.append("g")
+	.attr("transform", 
+		`translate(${meter_width + power_bar_width}, 0)`);
+
+power_curve
+	.append("rect")
+		.attr("width", meter_width)
+		.attr("height", p_curve_height)
+		.attr("fill", "none")
+		.attr("stroke", "#444");
+
+power_curve
+	.append("text")
+		.style("fill", "#fa0")
+		.style("font", "25px monospace")
+		.attr("transform", `translate(${meter_width/2}, ${p_curve_height/2})`)
+		.attr("text-anchor", "middle")
+		.text("power curve goes here");
 	
-let power_meter = dashboard.append("rect")
-	.attr("x", meter_width + power_bar_width)
-	.attr("y", p_curve_height)
-	.attr("width", meter_width)
-	.attr("height", meter_height)
-	.attr("fill", "red");
+let power_meter = dashboard.append("g")
+	.attr("transform", 
+		`translate(${meter_width + power_bar_width},
+			${p_curve_height})`);
 
-let time_meter = dashboard.append("rect")
-	.attr("x", meter_width + power_bar_width)
-	.attr("y", p_curve_height + meter_height)
-	.attr("width", meter_width)
-	.attr("height", meter_height)
-	.attr("fill", "white");
-	
+power_meter
+	.append("rect")
+		.attr("width", meter_width)
+		.attr("height", meter_height)
+		.attr("fill", "none")
+		.attr("stroke", "#444");
+
+power_meter
+	.append("text")
+		.style("fill", "#fa0")
+		.style("font", "25px monospace")
+		.attr("transform", `translate(${meter_width/2}, ${meter_height/2})`)
+		.attr("text-anchor", "middle")
+		.text("power meter goes here");
+
+let time_meter = dashboard.append("g")
+	.attr("transform", 
+		`translate(${meter_width + power_bar_width},
+			${p_curve_height + meter_height})`);
+
+time_meter
+	.append("rect")
+		.attr("width", meter_width)
+		.attr("height", meter_height)
+		.attr("fill", "none")
+		.attr("stroke", "#444");
+
+time_meter
+	.append("text")
+		.style("fill", "#fff")
+		.style("font", "25px monospace")
+		.attr("transform", `translate(${meter_width/2}, ${meter_height/2})`)
+		.attr("text-anchor", "middle")
+		.text("time goes here");
+
 function responsive_resize(svg) {
 	// find the aspect ratio of the area being resized
+	console.log("in responsive_resive");
 	const container = d3.select(svg.node().parentNode),
 		width = parseInt(svg.style("width"), 10),
 		height = parseInt(svg.style("height"), 10),
