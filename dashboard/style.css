@@ -1,7 +1,41 @@
+/* color palette */
+:root {
+	--speed: #0ff;
+	--split: #0ff;
+	--cadence: #8af;
+	--distance: #8af;
+	--power_bar: #fa0;
+	--power_curve: #fa0;
+	--power_meter: #fa0;
+	--time: #fff;
+}
+
 body {
 	background-color: black;
 	color: white;
 	font-family: Arial, Helvetica, sans-serif;
+}
+
+.speed {
+	fill: var(--speed);	
+}
+.split {
+	fill: var(--split);	
+}
+.cadence {
+	fill: var(--cadence);	
+}
+.power_bar {
+	fill: var(--power_bar);	
+}
+.power_meter {
+	fill: var(--power_meter);	
+}
+.power_curve {
+	fill: var(--power_curve);	
+}
+.time_meter {
+	fill: var(--time_meter);	
 }
 
 .axis {

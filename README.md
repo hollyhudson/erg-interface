@@ -34,8 +34,8 @@ A row is recorded at the end of each tick (after a magnet has passed the second 
 `tick_duration_usec`
 	Time it took for the magnet to pass from one sensor to the next (from falling edge on sensor A to falling edge of sensor B of the electrical signal).  Positive values are produced during the drive, and negative during the recovery.
 
-`inst_drag`
-	Instantaneous drag force.  Calculated by the speed of the belt squared, with the speed of the belt being calculated as the inverse of the tick duration.
+`inst_power`
+	Instantaneous force exerted on the handle.  Calculated by the speed of the belt squared, with the speed of the belt being calculated as the inverse of the tick duration.
 
 `stroke_power`
 	Integral of the drag forces for current stroke, calculated here with a running sum for simplicity.  
