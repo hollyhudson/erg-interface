@@ -39,126 +39,203 @@ let velocity = 0;
 let current_speed = 0;
 let distance = 0;
 
+const white = "#fff";
+const orange = "#ff9101";
+const green = "#7eff24";
+const cyan = "#04e7fb";
+
+
 // 1920 x 1080 (16x9)
 const canvas_width = 1920; // (170) 853 | 342 | 853
 const canvas_height = 1080; // (102) 1125/411 | 1536 | 714/411/411
-const speedometer_height = Math.round(canvas_height * 11 / 15);
-const meter_width = Math.round(canvas_width * 5 / 12);
+const graphics_width = Math.round(canvas_width / 2);
+const graphics_height = Math.round(canvas_height * 11 / 15);
+const meter_width = Math.round(canvas_width / 4);
 const meter_height = Math.round(canvas_height * 4 / 15);
-const power_bar_width = Math.round(canvas_width * 2 /12);
-const p_curve_height = Math.round(canvas_height * 7 / 15);
-const margin_top = 20;
-const margin_bottom = 20;
-const margin_left = 20;
-const margin_right = 20;
 
-let dashboard = d3.select("#dashboard")
-	.append("svg")
-		.attr("width", canvas_width)
-		.attr("height", canvas_height)
-		.call(responsive_resize);
-
-let speedometer = dashboard
+let speedometer = d3.select("#speed-svg")
 	.append("svg")
 		.attr("x", 0)
-		.attr("y", 0);
+		.attr("y", 0)
+		.attr("width", graphics_width)
+		.attr("height", graphics_height);
 
-let speed_text = speedometer
+let speed_value = speedometer
 	.append("text")
 		.attr("class", "speed")
-		.attr("x", meter_width/2)
-		.attr("y", speedometer_height/2)
+		.attr("class", "meter-value")
+		.attr("x", graphics_width / 2) 
+		.attr("y", graphics_height - graphics_height * 4 / 5)
 		.attr("text-anchor", "middle")
-		.text("speedometer goes here");
+		.style("fill", green)
+		.text("0");
 
-let cadence_meter = dashboard.append("svg")
-	.attr("x", 0)
-	.attr("y", speedometer_height);
+let speed_label = speedometer
+	.append("text")
+		.attr("class", "speed")
+		.attr("class", "meter-label")
+		.attr("x", graphics_width / 2)
+		.attr("y", graphics_height - graphics_height * 3 / 5)
+		.attr("text-anchor", "middle")
+		.style("fill", green)
+		.text("km/hr");
+	
+let split_value = speedometer
+	.append("text")
+		.attr("class", "speed")
+		.attr("class", "meter-value")
+		.attr("x", graphics_width / 2) 
+		.attr("y", graphics_height - graphics_height * 2 / 5)
+		.attr("text-anchor", "middle")
+		.style("fill", green)
+		.text("00:00");
 
-let cadence_text = cadence_meter
+let split_label = speedometer
+	.append("text")
+		.attr("class", "speed")
+		.attr("class", "meter-label")
+		.attr("x", graphics_width / 2)
+		.attr("y", graphics_height - graphics_height * 1 / 5)
+		.attr("text-anchor", "middle")
+		.style("fill", green)
+		.text("500m");
+
+let cadence_meter = d3.select("#cadence-meter-svg")
+	.append("svg")
+		.attr("x", 0)
+		.attr("y", 0)
+		.attr("width", meter_width)
+		.attr("height", meter_height);
+
+let cadence_value = cadence_meter
 	.append("text")
 		.attr("class", "cadence")
+		.attr("class", "meter-value")
 		.attr("x", meter_width/2)
-		.attr("y", meter_height/2)
+		.attr("y", meter_height - meter_height/2)
 		.attr("text-anchor", "middle")
-		.text("cadence goes here");
+		.style("fill", green)
+		.text("0");
+
+let cadence_label = cadence_meter
+	.append("text")
+		.attr("class", "cadence")
+		.attr("class", "meter-label")
+		.attr("x", meter_width/2)
+		.attr("y", meter_height - meter_height/4)
+		.attr("text-anchor", "middle")
+		.style("fill", green)
+		.text("spm");
 
 // POWER
 
-let power_bar = dashboard.append("svg")
-	.attr("x", meter_width + margin_left)
-	.attr("y", 0 + margin_top);
-
-const power_bar_graph_width = power_bar_width - margin_left - margin_right;
-const power_bar_graph_height = canvas_height - margin_top - margin_bottom;
-const y_power_bar = d3.scaleLinear()
-		.range([power_bar_graph_height,0]) 	// pixels
-		.domain([0,100]);					// data
-
-power_bar.selectAll("rect")
-	.data([0])
-	.enter()
-	.append("rect")
-		//.attr("class", "power_bar")
-		.attr("fill", "#fa0")
+let power_curve = d3.select("#power-curve-svg")
+	.append("svg")
 		.attr("x", 0)
-		.attr("width", power_bar_graph_width);
+		.attr("y", 0)
+		.attr("width", graphics_width)
+		.attr("height", graphics_height);
 
-/*
-
-let power_bar_rect = power_bar
-	.datum(50)
-	.append("rect")
-		.attr("x", 0)
-		.attr("y", function(d) { return y_power_bar(d); })
-		.attr("width", power_bar_graph_width)
-		.attr("height", function(d) { return power_bar_graph_height - y_power_bar(d); })
-		.style("fill", color_power);
-
-power_bar
+let p_curve_value = power_curve
 	.append("text")
-		.style("fill", color_power)
-		.style("font", "25px monospace")
-		.attr("x", power_bar_width/2)
-		.attr("y", canvas_height/2)
+		.attr("class", "power-curve")
+		.attr("class", "meter-value")
+		.attr("x", graphics_width / 2) 
+		.attr("y", graphics_height - graphics_height / 2)
 		.attr("text-anchor", "middle")
-		.text("power bar goes here");
-*/
+		.style("fill", orange)
+		.text("0");
 
-let power_curve = dashboard.append("svg")
-	.attr("x", meter_width + power_bar_width)
-	.attr("y", 0);
-
-power_curve
+let p_curve_label = power_curve
 	.append("text")
-		.attr("x", meter_width/2)
-		.attr("y", p_curve_height/2)
+		.attr("class", "power-curve")
+		.attr("class", "meter-label")
+		.attr("x", graphics_width / 2)
+		.attr("y", graphics_height - graphics_height / 4)
 		.attr("text-anchor", "middle")
-		.text("power curve goes here");
+		.style("fill", orange)
+		.text("effort units");
 	
-let power_meter = dashboard.append("svg")
-	.attr("x", meter_width + power_bar_width)
-	.attr("y", p_curve_height);
+let power_meter = d3.select("#power-meter-svg")
+	.append("svg")
+		.attr("x", 0)
+		.attr("y", 0)
+		.attr("width", meter_width)
+		.attr("height", meter_height);
 
-let power_text = power_meter
+let power_value = power_meter
 	.append("text")
 		.attr("class", "power_meter")
-		.attr("x", meter_width/2)
-		.attr("y", meter_height/2)
+		.attr("class", "meter-value")
+		.attr("x", meter_width / 2)
+		.attr("y", meter_height - meter_height / 2)
 		.attr("text-anchor", "middle")
-		.text("power meter goes here");
+		.style("fill", orange)
+		.text("0");
 
-let time_meter = dashboard.append("svg")
-	.attr("x", meter_width + power_bar_width)
-	.attr("y", p_curve_height + meter_height);
-
-let time_text = time_meter
+let power_label = power_meter
 	.append("text")
-		.attr("class", "time_meter")
-		.attr("x", meter_width/2)
-		.attr("y", meter_height/2)
+		.attr("class", "power_meter")
+		.attr("class", "meter-label")
+		.attr("x", meter_width / 2)
+		.attr("y", meter_height - meter_height / 5)
 		.attr("text-anchor", "middle")
-		.text("time goes here");
+		.style("fill", orange)
+		.text("effort units");
+
+let time_meter = d3.select("#time-meter-svg")
+	.append("svg")
+		.attr("x", 0)
+		.attr("y", 0)
+		.attr("width", meter_width)
+		.attr("height", meter_height);
+
+let time_value = time_meter
+	.append("text")
+		.attr("class", "time-meter")
+		.attr("class", "meter-value")
+		.attr("x", meter_width / 2)
+		.attr("y", meter_height - meter_height / 2)
+		.attr("text-anchor", "middle")
+		.style("fill", white)
+		.text("00:00");
+
+let time_label = time_meter
+	.append("text")
+		.attr("class", "time-meter")
+		.attr("class", "meter-label")
+		.attr("x", meter_width / 2)
+		.attr("y", meter_height - meter_height / 5)
+		.attr("text-anchor", "middle")
+		.style("fill", white)
+		.text("time");
+
+let distance_meter = d3.select("#distance-meter-svg")
+	.append("svg")
+		.attr("x", 0)
+		.attr("y", 0)
+		.attr("width", meter_width)
+		.attr("height", meter_height);
+
+let distance_value = distance_meter
+	.append("text")
+		.attr("class", "distance-meter")
+		.attr("class", "meter-value")
+		.attr("x", meter_width / 2)
+		.attr("y", meter_height - meter_height / 2)
+		.attr("text-anchor", "middle")
+		.style("fill", cyan)
+		.text("0");
+
+let distance_label = distance_meter
+	.append("text")
+		.attr("class", "distance-meter")
+		.attr("class", "meter-label")
+		.attr("x", meter_width / 2)
+		.attr("y", meter_height - meter_height / 5)
+		.attr("text-anchor", "middle")
+		.style("fill", cyan)
+		.text("km");
 
 // connect to the rower's websocket and append any new data as it comes in
 let host = location.hostname;
@@ -184,18 +261,19 @@ connection.onmessage = function(d) {
 	d = {
 		timestamp: +new_data[0],
 		stroke_time: +new_data[1],
-		inst_spm: new_data[5] / 10.0,
 		tick_duration: +new_data[2],
 		inst_power: +new_data[3],
 		stroke_power: +new_data[4],
+		inst_spm: +new_data[5],
+		inst_vel: +new_data[6],
+		velocity: +new_data[7] / 5,
 	}
 
 	//----------  DISPLAY TIME --------------------------//
 
 	// if this is the first row of data, create a time offset
-	if(d.timestamp == 0) {
+	if (start_time == 0 && d.inst_power != 0) {
 		start_time = d.timestamp; 	
-		setInterval(update_physics, 100);	
 	}
 
 	microsec = d.timestamp - start_time;
@@ -209,6 +287,81 @@ connection.onmessage = function(d) {
 	let min = parseInt(raw_min);
 	let sec = parseInt(raw_sec);
 
+	if (start_time != 0) {
+		time_value.text(format_time(min,sec));
+	}
+	
+	//----------  DISPLAY CADENCE --------------------------//
+		
+	if (d.stroke_time == 0)
+	{
+		total_strokes++;
+	}
+	
+	cadence_value.text(parseInt(d.inst_spm));
+
+	//----------  DISPLAY POWER --------------------------//
+
+	// update total power
+	if (d.tick_duration > 0) {
+		total_power += d.inst_power;
+	}
+	console.log("power: " + d.inst_power);
+
+	p_curve_value.text(parseInt(d.inst_power)); 
+	power_value.text(parseInt(total_power)); 
+
+/*
+	let pb = power_bar.selectAll("rect")
+		.data([d.inst_power]);
+
+	pb
+		.enter()
+		.append('rect');
+
+	pb
+		.transition()
+		.duration(100)
+		.attr('y', d => y_power_bar(d) )
+		.attr('height', d => power_bar_height - y_power_bar(d) );
+
+	pb
+		.exit()
+		.remove();
+*/
+	
+	//----------  DISPLAY SPEED and SPLIT --------------------//
+	
+	// speed is calculated here by effort_unit/hr, which is the closest
+	// analogy to distance/hr we can get without calibration with a C2
+	// the constant on top represents the distance the belt/oars travelled
+
+	let split = 500 / d.velocity; 
+	let split_min = parseInt(split / 60);
+	let split_sec = parseInt(split % 60);
+
+	split_value.text(format_time(split_min,split_sec));
+	let km_hr = (d.velocity * 3.6).toFixed(1); // m/s --> km/hr
+	speed_value.text(km_hr); 
+};
+
+/*
+function update_physics() {
+	// decay velocity
+	if (velocity <= 0) {
+		velocity = 0;
+	} else {
+		// drag force equation 
+		//velocity -= velocity * velocity * some constant
+		velocity -= velocity * velocity * drag_const * dt;
+	}
+
+	// update current distance
+	distance += velocity * dt;
+}
+*/
+
+function format_time(min, sec) {
 	// left pad
 	if (min == 0)
 		display_min = "00";
@@ -225,80 +378,8 @@ connection.onmessage = function(d) {
 		display_sec = "0" + sec;
 	else
 		display_sec = sec;
-
-	time_text.text(display_min + ":" + display_sec);
 	
-	//----------  DISPLAY CADENCE --------------------------//
-		
-	if (d.stroke_time == 0)
-	{
-		total_strokes++;
-	}
-	
-	cadence_text.text("cadence: " + d.inst_spm + "spm, distance: "
-		+ distance + "m?");
-
-	//----------  DISPLAY POWER --------------------------//
-
-	// update total power
-	if (d.tick_duration > 0) {
-		total_power += d.inst_power;
-	}
-	console.log("power: " + d.inst_power);
-
-	power_text.text(parseInt(total_power) + " effort units"); 
-
-	let pb = power_bar.selectAll("rect")
-		.data([d.inst_power]);
-	
-	pb
-		.enter()
-		.append('rect');
-
-	pb
-		.transition()
-		.duration(100)
-		//.attr('class', 'power_bar')
-		.attr('y', d => y_power_bar(d) )
-		.attr('height', d => power_bar_graph_height - y_power_bar(d) );
-
-	pb
-		.exit()
-		.remove();
-	
-	//power_bar.rect.y(inst_power);
-	//power_bar_rect.attr("height",  power_bar_graph_height - y_power_bar(d.inst_power));
-	
-	//----------  DISPLAY SPEED and SPLIT --------------------//
-	
-	// speed is calculated here by effort_unit/hr, which is the closest
-	// analogy to distance/hr we can get without calibration with a C2
-	// the constant on top represents the distance the belt/oars travelled
-	velocity = 1e9 / d.tick_duration; // vel = displacement/change in time
-
-	let raw_split = 500 / velocity; 
-	let split = parseInt(raw_split);
-	let split_min = split / 60;
-	let split_sec = split % 60;
-
-	speed_text.text(
-		parseInt(velocity) + " m/s? speed and " 
-		+ split_min + ":" + split_sec + " per 500m? split"
-	);
-};
-
-function update_physics() {
-	// decay velocity
-	if (velocity <= 0) {
-		velocity = 0;
-	} else {
-		// drag force equation 
-		//velocity -= velocity * velocity * some constant
-		velocity -= velocity * velocity * drag_const * dt;
-	}
-
-	// update current distance
-	distance += velocity * dt;
+	return display_min + ":" + display_sec;
 }
 
 function responsive_resize(svg) {

@@ -4,16 +4,77 @@
 	--split: #0ff;
 	--cadence: #8af;
 	--distance: #8af;
-	--power_bar: #fa0;
 	--power_curve: #fa0;
 	--power_meter: #fa0;
 	--time: #fff;
 }
 
+@font-face { 
+  font-family: "valuefont"; 
+  src: url("/assets/LeagueMono-UltraLight.woff"); 
+}
+@font-face { 
+  font-family: "narrowbright"; 
+  src: url("/assets/LeagueMono-NarrowUltraLight.woff"); 
+}
+@font-face { 
+  font-family: "widethin"; 
+  src: url("/assets/LeagueMono-Thin.woff"); 
+}
+@font-face { 
+  font-family: "labelfont"; 
+  src: url("/assets/LeagueMono-NarrowThin.woff"); 
+}
+
 body {
 	background-color: black;
 	color: white;
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: "narrowbright", san-serif; 
+	font-size: 25px;
+}
+
+.flex-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.flex-top {
+	display: flex;
+	flex-basis: 74%;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+}
+.flex-bottom {
+	display: flex;
+	flex-basis: 26%;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: center;
+	align-items: center;
+}
+
+.flex-graphics {
+	flex-basis: 50%;
+	text-align: center;
+}
+
+.flex-meter {
+	flex-basis: 25%;
+	text-align: center;
+}
+
+.meter-value {
+	font-family: "valuefont", monospace;
+	font-size: 90px;
+}
+
+.meter-label {
+	font-family: "labelfont", monospace;
+	font-size: 40px;
 }
 
 .speed {
@@ -25,16 +86,16 @@ body {
 .cadence {
 	fill: var(--cadence);	
 }
-.power_bar {
-	fill: var(--power_bar);	
-}
-.power_meter {
+.power-meter {
+	color: var(--power_meter);
 	fill: var(--power_meter);	
 }
-.power_curve {
+.power-curve {
+	color: var(--power_curve);
 	fill: var(--power_curve);	
 }
-.time_meter {
+.time-meter {
+	color: var(--time_meter);	
 	fill: var(--time_meter);	
 }
 
