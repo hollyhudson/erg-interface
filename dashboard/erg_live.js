@@ -7,12 +7,11 @@
 
 /*
  * Components:
- * speed meter                      | power  |  curve
- * split (text) inside speed meter  |  bar   |
- *                                  |        |  total power (text & bar)
- * ---------------------------------|        |--------------------------
- * cadence (spm)                    |        |  total time
- *      ::: 5 :::                     ::2::          ::: 5 :::
+ * speed meter                      |  curve
+ * split (text) inside speed meter  |
+ *                                  |  total power (text & bar)
+ * ---------------------------------|--------------------------
+ *    spm		|  distance			|    time		|   power
  */
 
 /*
@@ -27,6 +26,7 @@
 const drag_const = 0.00001;
 const dt = 100;	// milliseconds, for when to update physics
 
+let csv_to_export = "";
 let start_time = 0;
 let inst_power = 0; 
 let total_power = 0; 
@@ -44,7 +44,6 @@ const orange = "#ff9101";
 const green = "#7eff24";
 const cyan = "#04e7fb";
 
-
 // 1920 x 1080 (16x9)
 const canvas_width = 1920; // (170) 853 | 342 | 853
 const canvas_height = 1080; // (102) 1125/411 | 1536 | 714/411/411
@@ -52,6 +51,8 @@ const graphics_width = Math.round(canvas_width / 2);
 const graphics_height = Math.round(canvas_height * 11 / 15);
 const meter_width = Math.round(canvas_width / 4);
 const meter_height = Math.round(canvas_height * 4 / 15);
+//const meter_width = document.querySelectorAll('#cadence-meter-svg')[0].clientWidth;
+//const meter_height = document.querySelectorAll('#cadence-meter-svg')[0].clientHeight;
 
 let speedometer = d3.select("#speed-svg")
 	.append("svg")
@@ -154,7 +155,7 @@ let p_curve_label = power_curve
 		.attr("y", graphics_height - graphics_height / 4)
 		.attr("text-anchor", "middle")
 		.style("fill", orange)
-		.text("effort units");
+		.text("power curve");
 	
 let power_meter = d3.select("#power-meter-svg")
 	.append("svg")
@@ -181,7 +182,7 @@ let power_label = power_meter
 		.attr("y", meter_height - meter_height / 5)
 		.attr("text-anchor", "middle")
 		.style("fill", orange)
-		.text("effort units");
+		.text("total power");
 
 let time_meter = d3.select("#time-meter-svg")
 	.append("svg")
@@ -237,6 +238,8 @@ let distance_label = distance_meter
 		.style("fill", cyan)
 		.text("km");
 
+//------------------- PROCESS A MESSAGE -------------------//
+
 // connect to the rower's websocket and append any new data as it comes in
 let host = location.hostname;
 
@@ -253,21 +256,29 @@ connection.onmessage = function(d) {
 	if (d.data == "Connected")
 		return;
 
+	csv_to_export += d.data + "\n";
+
 	new_data = d.data.split(',');
 
+	// if new workout
 	if (new_data[0] == "time_usec") { return; }
+
 
 	// update variables 
 	d = {
-		timestamp: +new_data[0],
-		stroke_time: +new_data[1],
-		tick_duration: +new_data[2],
-		inst_power: +new_data[3],
-		stroke_power: +new_data[4],
-		inst_spm: +new_data[5],
-		inst_vel: +new_data[6],
-		velocity: +new_data[7] / 5,
+		timestamp: +new_data[0], // time since boot, not start of workout
+		stroke_time: +new_data[1], // time since start of current stroke
+		tick_duration: +new_data[2], // time since start of current tick?
+		inst_power: +new_data[3], // instantaneous power/effort/work
+		stroke_power: +new_data[4], // 
+		inst_spm: +new_data[5], // instantaneous cadence measurement
+		inst_vel: +new_data[6], // instantaneous velocity
+		velocity: +new_data[7] / 5, // smoothed velocity, for speed
 	}
+
+	//----------- UPDATE CSV for EXPORT --------------------//
+
+	
 
 	//----------  DISPLAY TIME --------------------------//
 
@@ -277,18 +288,9 @@ connection.onmessage = function(d) {
 	}
 
 	microsec = d.timestamp - start_time;
-	// to get sec divide by 1,000,000
-	total_sec = microsec / 1000000;
-	// to get min from this divide by 60
-	raw_min = total_sec / 60;
-	// to get seconds from that mod 60
-	raw_sec = total_sec % 60;
-
-	let min = parseInt(raw_min);
-	let sec = parseInt(raw_sec);
 
 	if (start_time != 0) {
-		time_value.text(format_time(min,sec));
+		time_value.text(format_time(microsec));
 	}
 	
 	//----------  DISPLAY CADENCE --------------------------//
@@ -311,57 +313,44 @@ connection.onmessage = function(d) {
 	p_curve_value.text(parseInt(d.inst_power)); 
 	power_value.text(parseInt(total_power)); 
 
-/*
-	let pb = power_bar.selectAll("rect")
-		.data([d.inst_power]);
-
-	pb
-		.enter()
-		.append('rect');
-
-	pb
-		.transition()
-		.duration(100)
-		.attr('y', d => y_power_bar(d) )
-		.attr('height', d => power_bar_height - y_power_bar(d) );
-
-	pb
-		.exit()
-		.remove();
-*/
-	
 	//----------  DISPLAY SPEED and SPLIT --------------------//
 	
-	// speed is calculated here by effort_unit/hr, which is the closest
-	// analogy to distance/hr we can get without calibration with a C2
-	// the constant on top represents the distance the belt/oars travelled
+	let split_in_microsec = 500 / d.velocity; 
+	split_value.text(format_time(split_in_microsec));
 
-	let split = 500 / d.velocity; 
-	let split_min = parseInt(split / 60);
-	let split_sec = parseInt(split % 60);
-
-	split_value.text(format_time(split_min,split_sec));
 	let km_hr = (d.velocity * 3.6).toFixed(1); // m/s --> km/hr
 	speed_value.text(km_hr); 
-};
 
-/*
-function update_physics() {
-	// decay velocity
-	if (velocity <= 0) {
-		velocity = 0;
-	} else {
-		// drag force equation 
-		//velocity -= velocity * velocity * some constant
-		velocity -= velocity * velocity * drag_const * dt;
+}; // end of processing of one message
+
+//----------------- HELPER FUNCTIONS -----------------------//
+
+function download_csv() {
+	if (csv_to_export == "") return;
+
+	if (!csv_to_export.match(/^data:text\/csv/i)) {
+		csv_to_export = 'data:text/csv;charset=utf-8,' + csv_to_export;
 	}
+	let data = encodeURI(csv_to_export);
 
-	// update current distance
-	distance += velocity * dt;
+	link = document.createElement('a');
+	link.setAttribute('href', data);
+	link.setAttribute('download', 'workout_data.csv');
+	link.click();
 }
-*/
 
-function format_time(min, sec) {
+// microseconds --> 00:00 format
+function format_time(microsec) {
+	// to get sec divide by 1,000,000
+	total_sec = microsec / 1000000;
+	// to get min from this divide by 60
+	raw_min = total_sec / 60;
+	// to get seconds from that mod 60
+	raw_sec = total_sec % 60;
+
+	let min = parseInt(raw_min);
+	let sec = parseInt(raw_sec);
+
 	// left pad
 	if (min == 0)
 		display_min = "00";

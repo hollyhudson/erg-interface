@@ -77,6 +77,11 @@ body {
 	font-size: 40px;
 }
 
+.card {
+	margin: 5px;
+	background: #252a33;
+}
+
 .speed {
 	fill: var(--speed);	
 }
