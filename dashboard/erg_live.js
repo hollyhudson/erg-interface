@@ -27,7 +27,7 @@ const drag_const = 0.00001;
 const dt = 100;	// milliseconds, for when to update physics
 
 let csv_to_export = "";
-let start_time = 0;
+let start_time = -1;
 let inst_power = 0; 
 let total_power = 0; 
 let stroke_power = 0; 
@@ -256,19 +256,22 @@ connection.onmessage = function(d) {
 	if (d.data == "Connected")
 		return;
 
-	csv_to_export += d.data + "\n";
-
 	new_data = d.data.split(',');
 
-	// if new workout
-	if (new_data[0] == "time_usec") { return; }
+	if (new_data[0] == "time_usec") { 
+		// new workout!
 
+		// start creating the downloadable csv object
+		// grab the header row, then move on so we can start getting data
+		csv_to_export = "time,stroke_count,inst_spm,total_power,inst_power,km_hr,km,tick_duration\n";
+		return; 
+	}
 
 	// update variables 
 	d = {
 		timestamp: +new_data[0], // time since boot, not start of workout
 		stroke_time: +new_data[1], // time since start of current stroke
-		tick_duration: +new_data[2], // time since start of current tick?
+		tick_duration: +new_data[2], 
 		inst_power: +new_data[3], // instantaneous power/effort/work
 		stroke_power: +new_data[4], // 
 		inst_spm: +new_data[5], // instantaneous cadence measurement
@@ -276,22 +279,22 @@ connection.onmessage = function(d) {
 		velocity: +new_data[7] / 5, // smoothed velocity, for speed
 	}
 
-	//----------- UPDATE CSV for EXPORT --------------------//
-
-	
-
 	//----------  DISPLAY TIME --------------------------//
 
 	// if this is the first row of data, create a time offset
-	if (start_time == 0 && d.inst_power != 0) {
-		start_time = d.timestamp; 	
+	if (start_time < 0) {
+		if (d.inst_power == 0) {
+			// workout hasn't started yet
+			return;
+		} else {
+			// workout has started, record first useable timestamp
+			start_time = d.timestamp; 	
+		}
 	}
 
-	microsec = d.timestamp - start_time;
-
-	if (start_time != 0) {
-		time_value.text(format_time(microsec));
-	}
+	time_microsec = d.timestamp - start_time;
+	time_value.text(format_time(time_microsec));
+	csv_to_export += time_microsec + ",";
 	
 	//----------  DISPLAY CADENCE --------------------------//
 		
@@ -299,8 +302,8 @@ connection.onmessage = function(d) {
 	{
 		total_strokes++;
 	}
-	
 	cadence_value.text(parseInt(d.inst_spm));
+	csv_to_export += total_strokes + "," + d.inst_spm + ",";	
 
 	//----------  DISPLAY POWER --------------------------//
 
@@ -312,15 +315,17 @@ connection.onmessage = function(d) {
 
 	p_curve_value.text(parseInt(d.inst_power)); 
 	power_value.text(parseInt(total_power)); 
+	csv_to_export += total_power.toFixed(1) + "," + d.inst_power.toFixed(2) + ",";
 
 	//----------  DISPLAY SPEED and SPLIT --------------------//
 	
-	let split_in_microsec = 500 / d.velocity; 
+	let split_in_microsec = 500e6 / d.velocity; 
 	split_value.text(format_time(split_in_microsec));
 
 	let km_hr = (d.velocity * 3.6).toFixed(1); // m/s --> km/hr
 	speed_value.text(km_hr); 
 
+	csv_to_export += km_hr + "," + 0 + "," + d.tick_duration + "\n";
 }; // end of processing of one message
 
 //----------------- HELPER FUNCTIONS -----------------------//
