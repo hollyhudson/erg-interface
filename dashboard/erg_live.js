@@ -25,6 +25,7 @@
 
 const drag_const = 0.00001;
 const dt = 100;	// milliseconds, for when to update physics
+let prev_timestamp = 0;
 
 let csv_to_export = "";
 let start_time = -1;
@@ -37,7 +38,7 @@ let inst_spm = 0;
 let total_strokes = 0;
 let velocity = 0;
 let current_speed = 0;
-let distance = 0;
+let total_dist = 0;
 
 const white = "#fff";
 const orange = "#ff9101";
@@ -236,7 +237,7 @@ let distance_label = distance_meter
 		.attr("y", meter_height - meter_height / 5)
 		.attr("text-anchor", "middle")
 		.style("fill", cyan)
-		.text("km");
+		.text("meters");
 
 //------------------- PROCESS A MESSAGE -------------------//
 
@@ -275,7 +276,7 @@ connection.onmessage = function(d) {
 		inst_power: +new_data[3], // instantaneous power/effort/work
 		stroke_power: +new_data[4], // 
 		inst_spm: +new_data[5], // instantaneous cadence measurement
-		inst_vel: +new_data[6], // instantaneous velocity
+		inst_vel: +new_data[6] / 5, // instantaneous velocity
 		velocity: +new_data[7] / 5, // smoothed velocity, for speed
 	}
 
@@ -289,6 +290,7 @@ connection.onmessage = function(d) {
 		} else {
 			// workout has started, record first useable timestamp
 			start_time = d.timestamp; 	
+			prev_timestamp = d.timestamp;
 		}
 	}
 
@@ -325,7 +327,16 @@ connection.onmessage = function(d) {
 	let km_hr = (d.velocity * 3.6).toFixed(1); // m/s --> km/hr
 	speed_value.text(km_hr); 
 
-	csv_to_export += km_hr + "," + 0 + "," + d.tick_duration + "\n";
+	csv_to_export += km_hr + ",";
+
+	//----------- DISPLAY DISTANCE -------------------------//
+
+	let dt = d.timestamp - prev_timestamp; 
+	prev_timestamp = d.timestamp;
+	total_dist += d.inst_vel * dt * 1e-6;
+
+	distance_value.text(total_dist.toFixed(0));
+	csv_to_export += total_dist.toFixed(1) + "," + d.tick_duration + "\n";
 }; // end of processing of one message
 
 //----------------- HELPER FUNCTIONS -----------------------//

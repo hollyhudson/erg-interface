@@ -11,19 +11,19 @@
 
 @font-face { 
   font-family: "valuefont"; 
-  src: url("/assets/LeagueMono-UltraLight.woff"); 
+  src: url("assets/LeagueMono-UltraLight.woff"); 
 }
 @font-face { 
   font-family: "narrowbright"; 
-  src: url("/assets/LeagueMono-NarrowUltraLight.woff"); 
+  src: url("assets/LeagueMono-NarrowUltraLight.woff"); 
 }
 @font-face { 
   font-family: "widethin"; 
-  src: url("/assets/LeagueMono-Thin.woff"); 
+  src: url("assets/LeagueMono-Thin.woff"); 
 }
 @font-face { 
   font-family: "labelfont"; 
-  src: url("/assets/LeagueMono-NarrowThin.woff"); 
+  src: url("assets/LeagueMono-NarrowThin.woff"); 
 }
 
 body {
