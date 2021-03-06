@@ -1,4 +1,10 @@
 /*
+DO NEXT:
+
+you only get one data point at a time but a line needs at least 2.  How do the live examples deal with this?  Can you start with one point and extend it.. or something?
+*/
+
+/*
  * Future code:
  * let interval = setInterval(function() {
         updateData();
@@ -24,13 +30,14 @@
  */
 
 const drag_const = 0.00001;
-const dt = 100;	// milliseconds, for when to update physics
 let prev_timestamp = 0;
 
 let csv_to_export = "";
 let start_time = -1;
 let inst_power = 0; 
 let total_power = 0; 
+let power_curve_line_data = [];
+let highest_power = 0;
 let stroke_power = 0; 
 let stroke_time = 0;
 let tick_duration = 0;
@@ -42,6 +49,7 @@ let total_dist = 0;
 
 const white = "#fff";
 const orange = "#ff9101";
+const red = "red";
 const green = "#7eff24";
 const cyan = "#04e7fb";
 
@@ -131,14 +139,36 @@ let cadence_label = cadence_meter
 
 // POWER
 
-let power_curve = d3.select("#power-curve-svg")
+let power_curve_area = d3.select("#power-curve-svg")
 	.append("svg")
+		.attr("class", "power-curve-area")
 		.attr("x", 0)
 		.attr("y", 0)
 		.attr("width", graphics_width)
 		.attr("height", graphics_height);
 
-let p_curve_value = power_curve
+// Set the scales for the power curve
+let pc_x = d3.scaleLinear()
+	.range([0, graphics_width])
+	.domain([0, 900000]);
+let pc_y = d3.scaleLinear()
+	.range([graphics_height, 0])
+	.domain([0, 20]);
+
+// call this with an array of x,y points aka "data elements"
+let power_curve_line = d3.line()
+	.x(function(d) { return pc_x(d.time); })
+	.y(function(d) { return pc_y(d.power); });
+
+/*
+// define the line for the highest power reference
+let hp_line = d3.line()
+	.x(function(d) { return pc_x(d.stroke_time) })
+	.y(function(d) { return pc_y(highest_power) });
+*/
+
+/*
+let p_curve_value = power_curve_area
 	.append("text")
 		.attr("class", "power-curve")
 		.attr("class", "meter-value")
@@ -147,8 +177,9 @@ let p_curve_value = power_curve
 		.attr("text-anchor", "middle")
 		.style("fill", orange)
 		.text("0");
+*/
 
-let p_curve_label = power_curve
+let p_curve_label = power_curve_area
 	.append("text")
 		.attr("class", "power-curve")
 		.attr("class", "meter-label")
@@ -291,6 +322,7 @@ connection.onmessage = function(d) {
 			// workout has started, record first useable timestamp
 			start_time = d.timestamp; 	
 			prev_timestamp = d.timestamp;
+			highest_power = d.inst_power;
 		}
 	}
 
@@ -303,7 +335,36 @@ connection.onmessage = function(d) {
 	if (d.stroke_time == 0)
 	{
 		total_strokes++;
+
+		// grey out old power curves
+		power_curve_area.selectAll('.power-curve')
+			.attr("class", "old-power-curve")
+			.style("stroke", "grey")
+			.style("stroke-opacity", 0.5)
+			.classed("power-curve", false);
+
+		// initiate a new power curve path
+		// replace old array
+		power_curve_line_data = [];
+
+		// append a new power curve for this stroke
+		power_curve_area
+			.append("path")
+				.attr("class", "power-curve")
+				.style("fill", "none")
+				.style("stroke", orange)
+				.style("stroke-width", 1.5);
+
+		// age power curves 
+		/*
+		d3.selectAll(".power-curve-line")
+			.each(d => d.age++)
+			.filter(d => d.age < 100)
+			.attr("opacity", d => 1/d.age);
+		*/
+
 	}
+
 	cadence_value.text(parseInt(d.inst_spm));
 	csv_to_export += total_strokes + "," + d.inst_spm + ",";	
 
@@ -313,9 +374,40 @@ connection.onmessage = function(d) {
 	if (d.tick_duration > 0) {
 		total_power += d.inst_power;
 	}
-	console.log("power: " + d.inst_power);
 
-	p_curve_value.text(parseInt(d.inst_power)); 
+	// if we have a new highest power reading, create a new high point line
+	if (highest_power < d.inst_power) { 
+		highest_power = d.inst_power;
+	}
+	
+	// draw highest power line
+	/*
+	power_curve_area.select(".power-curve")
+		//.enter()
+		.data(d)
+		.attr("d", hp_line)
+		.attr("class", "highest-power-line")
+		.attr("fill", "none")
+		.attr("stroke", red)
+			.attr("stroke-width", 1.5)
+		.exit()
+		.remove();
+	*/
+
+	// only update the power curve if we're actually doing power
+	if (d.inst_power > 0) {
+		power_curve_line_data.push({
+			time: d.stroke_time, 
+			power: d.inst_power,
+		});
+
+		// update the power curve
+		power_curve_area.select(".power-curve")
+			.attr("d", power_curve_line(power_curve_line_data));
+			//.attr("fill", "none");
+	}
+
+	//p_curve_value.text(parseInt(d.inst_power)); 
 	power_value.text(parseInt(total_power)); 
 	csv_to_export += total_power.toFixed(1) + "," + d.inst_power.toFixed(2) + ",";
 
