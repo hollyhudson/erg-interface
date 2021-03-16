@@ -1,17 +1,4 @@
 /*
-DO NEXT:
-
-you only get one data point at a time but a line needs at least 2.  How do the live examples deal with this?  Can you start with one point and extend it.. or something?
-*/
-
-/*
- * Future code:
- * let interval = setInterval(function() {
-        updateData();
- * }, 5000);  // update every 5 sec
- */
-
-/*
  * Components:
  * speed meter                      |  curve
  * split (text) inside speed meter  |
@@ -30,6 +17,7 @@ you only get one data point at a time but a line needs at least 2.  How do the l
  */
 
 const drag_const = 0.00001;
+const max_speed = 20;
 let prev_timestamp = 0;
 
 let csv_to_export = "";
@@ -52,6 +40,8 @@ const orange = "#ff9101";
 const red = "red";
 const green = "#7eff24";
 const cyan = "#04e7fb";
+const grey = "#505150";
+const speed_colors = ["#7eff24","#7eff79","#7effad","#7effff"];
 
 // 1920 x 1080 (16x9)
 const canvas_width = 1920; // (170) 853 | 342 | 853
@@ -60,52 +50,73 @@ const graphics_width = Math.round(canvas_width / 2);
 const graphics_height = Math.round(canvas_height * 11 / 15);
 const meter_width = Math.round(canvas_width / 4);
 const meter_height = Math.round(canvas_height * 4 / 15);
-//const meter_width = document.querySelectorAll('#cadence-meter-svg')[0].clientWidth;
-//const meter_height = document.querySelectorAll('#cadence-meter-svg')[0].clientHeight;
 
-let speedometer = d3.select("#speed-svg")
+let speedometer_area = d3.select("#speed-svg")
 	.append("svg")
+		.attr("class", "speedometer-area")
 		.attr("x", 0)
 		.attr("y", 0)
 		.attr("width", graphics_width)
 		.attr("height", graphics_height);
 
-let speed_value = speedometer
+let speed_value = speedometer_area
 	.append("text")
 		.attr("class", "speed")
 		.attr("class", "meter-value")
 		.attr("x", graphics_width / 2) 
-		.attr("y", graphics_height - graphics_height * 4 / 5)
+		.attr("y", graphics_height - graphics_height * 5 / 8)
 		.attr("text-anchor", "middle")
 		.style("fill", green)
 		.text("0");
 
-let speed_label = speedometer
+let speed_label = speedometer_area
 	.append("text")
 		.attr("class", "speed")
 		.attr("class", "meter-label")
 		.attr("x", graphics_width / 2)
-		.attr("y", graphics_height - graphics_height * 3 / 5)
+		.attr("y", graphics_height - graphics_height * 4 / 8)
 		.attr("text-anchor", "middle")
 		.style("fill", green)
 		.text("km/hr");
-	
-let split_value = speedometer
+
+let speed_dial_arc = d3.arc()
+	.outerRadius(300) // size is relative to container, so trying some nums
+	.innerRadius(250)
+	.cornerRadius(10)
+	.startAngle(180 * Math.PI / 180)
+	.endAngle(180 * Math.PI / 180);
+
+let speed_dial = speedometer_area
+	.append("path")
+		.attr("transform", "translate(" 
+						+ (graphics_width / 2) 
+						+ ", "
+						+ (graphics_height - graphics_height * 4.9 / 8)
+						+ ")")
+		.attr("d", speed_dial_arc)
+		//.attr("fill", d => d.color);
+		.style("fill", green);
+
+let dial_scale = d3.scaleLinear()
+    .domain([0,20])
+    .range([180 * Math.PI / 180, (180 + 270) * Math.PI / 180]);
+
+let split_value = speedometer_area
 	.append("text")
 		.attr("class", "speed")
 		.attr("class", "meter-value")
 		.attr("x", graphics_width / 2) 
-		.attr("y", graphics_height - graphics_height * 2 / 5)
+		.attr("y", graphics_height - graphics_height * 1 / 10)
 		.attr("text-anchor", "middle")
 		.style("fill", green)
 		.text("00:00");
 
-let split_label = speedometer
+let split_label = speedometer_area
 	.append("text")
 		.attr("class", "speed")
 		.attr("class", "meter-label")
 		.attr("x", graphics_width / 2)
-		.attr("y", graphics_height - graphics_height * 1 / 5)
+		.attr("y", graphics_height - graphics_height * 1 / 50)
 		.attr("text-anchor", "middle")
 		.style("fill", green)
 		.text("500m");
@@ -159,25 +170,6 @@ let pc_y = d3.scaleLinear()
 let power_curve_line = d3.line()
 	.x(function(d) { return pc_x(d.time); })
 	.y(function(d) { return pc_y(d.power); });
-
-/*
-// define the line for the highest power reference
-let hp_line = d3.line()
-	.x(function(d) { return pc_x(d.stroke_time) })
-	.y(function(d) { return pc_y(highest_power) });
-*/
-
-/*
-let p_curve_value = power_curve_area
-	.append("text")
-		.attr("class", "power-curve")
-		.attr("class", "meter-value")
-		.attr("x", graphics_width / 2) 
-		.attr("y", graphics_height - graphics_height / 2)
-		.attr("text-anchor", "middle")
-		.style("fill", orange)
-		.text("0");
-*/
 
 let p_curve_label = power_curve_area
 	.append("text")
@@ -276,7 +268,7 @@ let distance_label = distance_meter
 let host = location.hostname;
 
 //if (!host)
-	host = "192.168.178.51";
+	host = "10.1.0.158";
 
 let connection = new WebSocket('ws://' + host + ':81/', ['arduino']);
 connection.onopen = function () { connection.send('Connect ' + new Date()); };
@@ -339,8 +331,9 @@ connection.onmessage = function(d) {
 		// grey out old power curves
 		power_curve_area.selectAll('.power-curve')
 			.attr("class", "old-power-curve")
-			.style("stroke", "grey")
+			.style("stroke", grey)
 			.style("stroke-opacity", 0.5)
+			.style("stroke-width", 1)
 			.classed("power-curve", false);
 
 		// initiate a new power curve path
@@ -353,17 +346,7 @@ connection.onmessage = function(d) {
 				.attr("class", "power-curve")
 				.style("fill", "none")
 				.style("stroke", orange)
-				.style("stroke-width", 1.5);
-
-		// age power curves 
-		/*
-		d3.selectAll(".power-curve-line")
-			.each(d => d.age++)
-			.filter(d => d.age < 100)
-			.attr("opacity", d => 1/d.age);
-		*/
-
-	}
+				.style("stroke-width", 3);
 
 	cadence_value.text(parseInt(d.inst_spm));
 	csv_to_export += total_strokes + "," + d.inst_spm + ",";	
@@ -380,20 +363,6 @@ connection.onmessage = function(d) {
 		highest_power = d.inst_power;
 	}
 	
-	// draw highest power line
-	/*
-	power_curve_area.select(".power-curve")
-		//.enter()
-		.data(d)
-		.attr("d", hp_line)
-		.attr("class", "highest-power-line")
-		.attr("fill", "none")
-		.attr("stroke", red)
-			.attr("stroke-width", 1.5)
-		.exit()
-		.remove();
-	*/
-
 	// only update the power curve if we're actually doing power
 	if (d.inst_power > 0) {
 		power_curve_line_data.push({
@@ -419,6 +388,10 @@ connection.onmessage = function(d) {
 	let km_hr = (d.velocity * 3.6).toFixed(1); // m/s --> km/hr
 	speed_value.text(km_hr); 
 
+	speed_dial_arc.endAngle(dial_scale(km_hr));
+	speed_dial.attr("d", speed_dial_arc);
+	//speed_dial.style("color", speed_color);
+
 	csv_to_export += km_hr + ",";
 
 	//----------- DISPLAY DISTANCE -------------------------//
@@ -432,6 +405,34 @@ connection.onmessage = function(d) {
 }; // end of processing of one message
 
 //----------------- HELPER FUNCTIONS -----------------------//
+
+function generate_pie_data(kph) {
+	let colors = [];
+
+	// if we're not moving, just return an array of blacks
+	if (kph <= 0) {
+		for (i = 0; i < 20; i++) {
+			colors[i] = {color: "#000", value: 1};
+		}
+		return colors;
+	}
+
+	// put the colors into the array
+	for (i = 0; i < 20; i++) {
+		if (kph <= i) {
+			colors[i] = {color: "#000", value: 1};
+		} else if (i < 5) {
+			colors[i] = {color: speed_colors[0], value: 1};	
+		} else if (i >= 5 && i < 10) {
+			colors[i] = {color: speed_colors[1], value: 1};
+		} else if (i >= 10 && i < 15) {
+			colors[i] = {color: speed_colors[2], value: 1};
+		} else if (i >= 15 && i < 20) {
+			colors[i] = {color: speed_colors[3], value: 1};	
+		}
+	} 
+	return colors;
+}
 
 function download_csv() {
 	if (csv_to_export == "") return;
