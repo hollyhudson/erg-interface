@@ -5,9 +5,9 @@
  *                                  |  total power (text & bar)
  * ---------------------------------|--------------------------
  *    spm		|  distance			|    time		|   power
- */
 
-/*
+
+
  * Here power, work, and effort are all used interchangeably.
  * We can produce a measure of effort during rowing that can be used to
  * compare changes over time and between users, but without calibrating
@@ -176,7 +176,7 @@ let p_curve_label = power_curve_area
 		.attr("class", "power-curve")
 		.attr("class", "meter-label")
 		.attr("x", graphics_width / 2)
-		.attr("y", graphics_height - graphics_height / 4)
+		.attr("y", graphics_height - graphics_height * 1 / 40)
 		.attr("text-anchor", "middle")
 		.style("fill", orange)
 		.text("power curve");
@@ -324,6 +324,11 @@ connection.onmessage = function(d) {
 	
 	//----------  DISPLAY CADENCE --------------------------//
 		
+	cadence_value.text(parseInt(d.inst_spm));
+	csv_to_export += total_strokes + "," + d.inst_spm + ",";	
+
+	//----------  DISPLAY POWER --------------------------//
+
 	if (d.stroke_time == 0)
 	{
 		total_strokes++;
@@ -347,11 +352,7 @@ connection.onmessage = function(d) {
 				.style("fill", "none")
 				.style("stroke", orange)
 				.style("stroke-width", 3);
-
-	cadence_value.text(parseInt(d.inst_spm));
-	csv_to_export += total_strokes + "," + d.inst_spm + ",";	
-
-	//----------  DISPLAY POWER --------------------------//
+	}
 
 	// update total power
 	if (d.tick_duration > 0) {
@@ -373,7 +374,6 @@ connection.onmessage = function(d) {
 		// update the power curve
 		power_curve_area.select(".power-curve")
 			.attr("d", power_curve_line(power_curve_line_data));
-			//.attr("fill", "none");
 	}
 
 	//p_curve_value.text(parseInt(d.inst_power)); 
@@ -390,6 +390,7 @@ connection.onmessage = function(d) {
 
 	speed_dial_arc.endAngle(dial_scale(km_hr));
 	speed_dial.attr("d", speed_dial_arc);
+
 	//speed_dial.style("color", speed_color);
 
 	csv_to_export += km_hr + ",";
@@ -406,6 +407,7 @@ connection.onmessage = function(d) {
 
 //----------------- HELPER FUNCTIONS -----------------------//
 
+/*
 function generate_pie_data(kph) {
 	let colors = [];
 
@@ -433,6 +435,7 @@ function generate_pie_data(kph) {
 	} 
 	return colors;
 }
+*/
 
 function download_csv() {
 	if (csv_to_export == "") return;
